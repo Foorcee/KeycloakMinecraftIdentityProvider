@@ -41,6 +41,7 @@ public class MinecraftIdentityProvider extends AbstractOAuth2IdentityProvider<Mi
         MinecraftProfile profile = requestMinecraftProfile(minecraftToken);
 
         BrokeredIdentityContext user = new BrokeredIdentityContext(profile.id(), getConfig());
+        user.setUsername(profile.username());
 
         return user;
     }
