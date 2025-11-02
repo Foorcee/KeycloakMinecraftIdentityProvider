@@ -6,17 +6,18 @@ import de.foorcee.keycloak.minecraft.auth.AuthApplication;
 import de.foorcee.keycloak.minecraft.auth.AuthenticationFlowStep;
 import de.foorcee.keycloak.minecraft.auth.result.MinecraftToken;
 import de.foorcee.keycloak.minecraft.auth.result.XboxTokenPair;
+import de.foorcee.keycloak.minecraft.auth.result.MinecraftXstsToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 
-public class MinecraftTokenAuthenticationStep implements AuthenticationFlowStep<XboxTokenPair, MinecraftToken> {
+public class MinecraftTokenAuthenticationStep implements AuthenticationFlowStep<XboxTokenPair<MinecraftXstsToken>, MinecraftToken> {
 
     private static final String AUTH_MINECRAFT_URL = "https://api.minecraftservices.com/authentication/login_with_xbox";
 
     @Override
-    public MinecraftToken execute(KeycloakSession session, AuthApplication application, XboxTokenPair pair) throws Exception {
+    public MinecraftToken execute(KeycloakSession session, AuthApplication application, XboxTokenPair<MinecraftXstsToken> pair) throws Exception {
         ObjectNode obj = MAPPER.createObjectNode();
         obj.put("identityToken", "XBL3.0 x=" + pair.xblToken().userHash() + ";" + pair.xstsToken().token());
         try (SimpleHttpResponse response = SimpleHttp.create(session).doPost(AUTH_MINECRAFT_URL).json(obj).asResponse()) {

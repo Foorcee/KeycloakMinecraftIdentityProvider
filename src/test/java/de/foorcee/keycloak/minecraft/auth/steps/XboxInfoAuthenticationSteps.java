@@ -1,14 +1,13 @@
 package de.foorcee.keycloak.minecraft.auth.steps;
 
 import de.foorcee.keycloak.minecraft.AbstractKeycloakTest;
-import de.foorcee.keycloak.minecraft.auth.RelyingParty;
-import de.foorcee.keycloak.minecraft.auth.result.MinecraftToken;
-import de.foorcee.keycloak.minecraft.auth.result.XblToken;
+import de.foorcee.keycloak.minecraft.auth.exception.MsaAuthenticationException;
 import de.foorcee.keycloak.minecraft.auth.result.MsaAccessToken;
 import de.foorcee.keycloak.minecraft.auth.result.MsaDeviceCode;
+import de.foorcee.keycloak.minecraft.auth.result.XblToken;
+import de.foorcee.keycloak.minecraft.auth.result.XboxLiveXstsToken;
+import de.foorcee.keycloak.minecraft.auth.result.XboxProfileInfo;
 import de.foorcee.keycloak.minecraft.auth.result.XboxTokenPair;
-import de.foorcee.keycloak.minecraft.auth.result.XstsToken;
-import de.foorcee.keycloak.minecraft.auth.exception.MsaAuthenticationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -20,18 +19,18 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.awaitility.Awaitility.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class AuthenticationStepTests extends AbstractKeycloakTest {
+public class XboxInfoAuthenticationSteps extends AbstractKeycloakTest {
 
     private MsaDeviceCode msaDeviceCode;
     private MsaAccessToken msaAuthToken;
     private XblToken xblToken;
-    private XstsToken xstsToken;
-    private MinecraftToken minecraftToken;
+    private XboxLiveXstsToken xstsToken;
 
     @Test
     @Order(1)
@@ -98,35 +97,33 @@ public class AuthenticationStepTests extends AbstractKeycloakTest {
 
     @Test
     @Order(5)
-    public void testXstsToken() {
-        var step = new XstsTokenAuthenticationStep(RelyingParty.MINECRAFT_SERVICES);
+    public void testXstsTokenXboxLive() {
+        var step = new XboxLiveXstsTokenAuthentication();
         xstsToken = Assertions.assertDoesNotThrow(() -> step.execute(session, MINECRAFT_LAUNCHER, xblToken));
 
         assertThat(xstsToken).isNotNull();
         assertThat(xstsToken.token()).isNotEqualTo(xblToken.token());
+
+        assertThat(xstsToken.gamertag()).isNotEmpty();
+        assertThat(xstsToken.xid()).isGreaterThan(0);
 
         System.out.println("Xsts Token: " + xstsToken);
     }
 
     @Test
     @Order(6)
-    public void testMinecraftToken() {
-        var step = new MinecraftTokenAuthenticationStep();
-        XboxTokenPair xboxTokenPair = new XboxTokenPair(xblToken, xstsToken);
-        minecraftToken = Assertions.assertDoesNotThrow(() -> step.execute(session, MINECRAFT_LAUNCHER, xboxTokenPair));
+    public void testXboxLiveProfile() {
+        var step = new XboxLiveFamilyInfoAuthenticationStep();
+        var xboxToken = new XboxTokenPair<>(xblToken, xstsToken);
+        XboxProfileInfo profile = Assertions.assertDoesNotThrow(() -> step.execute(session, MINECRAFT_LAUNCHER, xboxToken));
 
-        assertThat(minecraftToken).isNotNull();
-        assertThat(minecraftToken.accessToken()).isNotEmpty();
-    }
-
-    @Test
-    @Order(7)
-    public void testMinecraftProfile() {
-        var step = new MinecraftProfileAuthenticationStep();
-        var profile = Assertions.assertDoesNotThrow(() -> step.execute(session, MINECRAFT_LAUNCHER, minecraftToken));
         assertThat(profile).isNotNull();
 
-        assertThat(profile.id()).isNotNull();
-        assertThat(profile.username()).isNotEmpty();
+        assertThat(profile.email()).isNotEmpty();
+        assertThat(profile.firstname()).isNotEmpty();
+        assertThat(profile.lastname()).isNotEmpty();
+
+        System.out.println("Xbox Profile: " + profile);
     }
+
 }

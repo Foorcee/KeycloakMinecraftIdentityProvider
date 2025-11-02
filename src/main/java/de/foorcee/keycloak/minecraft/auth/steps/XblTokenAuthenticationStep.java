@@ -44,25 +44,7 @@ public class XblTokenAuthenticationStep implements AuthenticationFlowStep<MsaAcc
                 throw new IllegalArgumentException("Token is null or empty");
             }
 
-            if (!body.has("DisplayClaims")) {
-                throw new IllegalArgumentException("Missing token from responseObj.has(\"DisplayClaims\")");
-            }
-
-            JsonNode displayClaims = body.get("DisplayClaims");
-
-            if (!displayClaims.has("xui")) {
-                throw new IllegalArgumentException("Missing token from displayClaims.has(\"xui\")");
-            }
-
-            JsonNode xui = displayClaims.get("xui");
-            if (!xui.isArray()) {
-                throw new IllegalArgumentException("Invalid xui array");
-            }
-
-            if (xui.isEmpty())
-                throw new IllegalArgumentException("xuiArray is empty");
-
-            JsonNode xuiFirst = xui.get(0);
+            JsonNode xuiFirst = extractXuiClaims(body);
 
             if (!xuiFirst.has("uhs"))
                 throw new IllegalArgumentException("Missing uhs in xui");
@@ -76,5 +58,27 @@ public class XblTokenAuthenticationStep implements AuthenticationFlowStep<MsaAcc
         } catch (IOException e) {
             throw new IdentityBrokerException("Could not obtain user profile from xbox auth", e);
         }
+    }
+
+    protected static JsonNode extractXuiClaims(JsonNode body) {
+        if (!body.has("DisplayClaims")) {
+            throw new IllegalArgumentException("Missing token from responseObj.has(\"DisplayClaims\")");
+        }
+
+        JsonNode displayClaims = body.get("DisplayClaims");
+
+        if (!displayClaims.has("xui")) {
+            throw new IllegalArgumentException("Missing xui in DisplayClaims");
+        }
+
+        JsonNode xui = displayClaims.get("xui");
+        if (!xui.isArray()) {
+            throw new IllegalArgumentException("Invalid xui array");
+        }
+
+        if (xui.isEmpty())
+            throw new IllegalArgumentException("xuiArray is empty");
+
+        return xui.get(0);
     }
 }
