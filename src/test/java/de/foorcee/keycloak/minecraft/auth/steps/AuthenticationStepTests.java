@@ -79,6 +79,8 @@ public class AuthenticationStepTests extends AbstractKeycloakTest {
 
         assertThat(msaAuthToken).isNotNull();
         assertThat(msaAuthToken.accessToken()).isNotEmpty();
+
+        System.out.println("Msa Access Token: " + msaAuthToken.accessToken());
     }
 
     @Test
@@ -90,6 +92,8 @@ public class AuthenticationStepTests extends AbstractKeycloakTest {
         assertThat(xblToken).isNotNull();
         assertThat(xblToken.token()).isNotNull();
         assertThat(xblToken.userHash()).isNotEmpty();
+
+        System.out.println("Xbl Token: " + xblToken);
     }
 
     @Test
@@ -100,6 +104,8 @@ public class AuthenticationStepTests extends AbstractKeycloakTest {
 
         assertThat(xstsToken).isNotNull();
         assertThat(xstsToken.token()).isNotEqualTo(xblToken.token());
+
+        System.out.println("Xsts Token: " + xstsToken);
     }
 
     @Test
@@ -110,7 +116,7 @@ public class AuthenticationStepTests extends AbstractKeycloakTest {
         minecraftToken = Assertions.assertDoesNotThrow(() -> step.execute(session, MINECRAFT_LAUNCHER, xboxTokenPair));
 
         assertThat(minecraftToken).isNotNull();
-        assertThat(msaAuthToken.accessToken()).isNotEmpty();
+        assertThat(minecraftToken.accessToken()).isNotEmpty();
     }
 
     @Test
