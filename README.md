@@ -13,7 +13,11 @@ Status: Experimental/Work‑in‑progress.
   - Provider: `de.foorcee.keycloak.minecraft.MinecraftIdentityProvider`
   - Themes/templates for UI: `src/main/resources/theme/...`
 
-High‑level flow:
+Main functions (Hauptfunktionen):
+1) Minecraft als Identity Provider (IdP) in Keycloak hinzufügen und Microsoft‑Konten föderieren. Benutzer können sich alternativ über ihren Microsoft/Minecraft‑Account anmelden; das Plugin führt den Token‑Austausch Microsoft → XBL → XSTS → Minecraft durch und mappt das resultierende Profil nach Keycloak.
+2) Custom Self‑Registration Flow mit dem Microsoft Device‑Code‑Flow. Neue Benutzer können sich selbst registrieren, indem sie einen Gerätecode auf der Microsoft‑Verifizierungsseite bestätigen. Dadurch wird sichergestellt, dass nur Benutzer mit einem gültigen Minecraft‑Account registriert werden.
+
+High‑level flow (IdP Login):
 1. Redirect user to Microsoft OAuth 2.0 authorize endpoint (consumer tenant).
 2. Exchange code for a Microsoft access token.
 3. Use the token to obtain:
@@ -66,6 +70,27 @@ This repository includes a Compose setup that builds Keycloak with the provider 
 - Or for containers: mount into /opt/keycloak/providers/ and start as usual
 
 4) Configure the IdP as in Option A.
+
+## Custom self-registration flow (Device Code Flow)
+This project also provides a custom registration flow that uses the Microsoft Device Code flow to ensure that newly registered users own a valid Minecraft account.
+
+How to enable it in Keycloak:
+1) In the Admin Console, go to Authentication → Flows.
+2) Create a new flow (e.g., "Self-registration with Minecraft").
+3) Add an execution to the flow and select the authenticator: "Signup with Minecraft" (ID: signup-with-minecraft-authenticator). Set its requirement to REQUIRED.
+4) Optionally, add UPDATE PASSWORD as a required action post registration (the authenticator already sets this by default for the created user).
+5) Use this flow as your Registration flow or embed it where appropriate in your existing flows.
+
+What the flow does:
+- Shows a page with the device verification URL and user code.
+- Polls Microsoft until the user confirms the code.
+- Exchanges tokens Microsoft → XBL → XSTS → Minecraft.
+- Creates a Keycloak user with the Minecraft profile’s username and enables the account.
+- Ensures only users with a valid Minecraft account can complete self-registration.
+
+Notes:
+- The UI template is provided at src/main/resources/theme/.../signup-with-minecraft.ftl and can be customized.
+- Rate limiting is handled via the polling interval from Microsoft; the step respects the slow_down signal.
 
 ## Scripts and useful commands
 - Build (skip tests):
