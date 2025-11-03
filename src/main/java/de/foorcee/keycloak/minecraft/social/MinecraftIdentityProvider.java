@@ -1,10 +1,12 @@
-package de.foorcee.keycloak.minecraft;
+package de.foorcee.keycloak.minecraft.social;
 
 import de.foorcee.keycloak.minecraft.auth.AuthApplication;
 import de.foorcee.keycloak.minecraft.auth.flow.AuthenticationFlow;
-import de.foorcee.keycloak.minecraft.auth.flow.AuthenticationsFlows;
+import de.foorcee.keycloak.minecraft.auth.flow.AuthenticationFlows;
+import de.foorcee.keycloak.minecraft.auth.result.FullProfile;
 import de.foorcee.keycloak.minecraft.auth.result.MinecraftProfile;
 import de.foorcee.keycloak.minecraft.auth.result.MsaAccessToken;
+import de.foorcee.keycloak.minecraft.auth.result.XboxProfile;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -17,7 +19,7 @@ public class MinecraftIdentityProvider extends AbstractOAuth2IdentityProvider<Mi
     private static final String AUTH_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
     private static final String TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
 
-    private static final String DEFAULT_SCOPE = "XboxLive.signin offline_access openid profile"; //
+    private static final String DEFAULT_SCOPE = "XboxLive.signin"; //
 
     private final AuthApplication application;
 
@@ -34,17 +36,24 @@ public class MinecraftIdentityProvider extends AbstractOAuth2IdentityProvider<Mi
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         MsaAccessToken msaAccessToken = new MsaAccessToken(accessToken);
 
-        AuthenticationFlow<MsaAccessToken, MinecraftProfile> flow = AuthenticationsFlows.JAVA_MINECRAFT_PROFILE;
+        AuthenticationFlow<MsaAccessToken, FullProfile> flow = AuthenticationFlows.FULL_PROFILE;
 
-        MinecraftProfile profile;
+        FullProfile profile;
         try {
             profile = flow.execute(session, application, msaAccessToken);
         } catch (Exception e) {
             throw new IdentityBrokerException("Authentication flow error", e);
         }
 
-        BrokeredIdentityContext user = new BrokeredIdentityContext(profile.id(), getConfig());
-        user.setUsername(profile.username());
+        XboxProfile xboxProfile = profile.xboxProfile();
+        MinecraftProfile minecraftProfile = profile.minecraftProfile();
+
+        BrokeredIdentityContext user = new BrokeredIdentityContext(minecraftProfile.id(), getConfig());
+        user.setUsername(minecraftProfile.username());
+
+        user.setEmail(xboxProfile.email());
+        user.setFirstName(xboxProfile.firstname());
+        user.setLastName(xboxProfile.lastname());
 
         return user;
     }

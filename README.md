@@ -9,8 +9,8 @@ Status: Experimental/Work‑in‑progress.
 - Provider ID: `minecraft`
 - Default Microsoft OAuth scopes: `XboxLive.signin offline_access`
 - Entry points:
-  - Factory: `de.foorcee.keycloak.minecraft.MinecraftIdentityProviderFactory` (registered via `META-INF/services/org.keycloak.broker.social.SocialIdentityProviderFactory`)
-  - Provider: `de.foorcee.keycloak.minecraft.MinecraftIdentityProvider`
+  - Factory: `de.foorcee.keycloak.minecraft.social.MinecraftIdentityProviderFactory` (registered via `META-INF/services/org.keycloak.broker.social.SocialIdentityProviderFactory`)
+  - Provider: `de.foorcee.keycloak.minecraft.social.MinecraftIdentityProvider`
   - Themes/templates for UI: `src/main/resources/theme/...`
 
 Main functions (Hauptfunktionen):

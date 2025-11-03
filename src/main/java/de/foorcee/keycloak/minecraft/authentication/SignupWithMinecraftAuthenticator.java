@@ -1,13 +1,11 @@
-package de.foorcee.keycloak.minecraft.authentication.forms;
+package de.foorcee.keycloak.minecraft.authentication;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import de.foorcee.keycloak.minecraft.auth.AuthApplication;
 import de.foorcee.keycloak.minecraft.auth.AuthenticationFlowStep;
 import de.foorcee.keycloak.minecraft.auth.exception.MsaAuthenticationException;
-import de.foorcee.keycloak.minecraft.auth.flow.AuthenticationsFlows;
-import de.foorcee.keycloak.minecraft.auth.result.MinecraftProfile;
-import de.foorcee.keycloak.minecraft.auth.result.MsaAccessToken;
-import de.foorcee.keycloak.minecraft.auth.result.MsaDeviceCode;
+import de.foorcee.keycloak.minecraft.auth.flow.AuthenticationFlows;
+import de.foorcee.keycloak.minecraft.auth.result.*;
 import de.foorcee.keycloak.minecraft.auth.steps.MsaDeviceCodeAuthenticationStep;
 import de.foorcee.keycloak.minecraft.auth.steps.MsaDeviceCodeVerificationStep;
 import jakarta.ws.rs.core.Response;
@@ -19,6 +17,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class SignupWithMinecraftAuthenticator implements Authenticator {
@@ -88,20 +87,41 @@ public class SignupWithMinecraftAuthenticator implements Authenticator {
             throw new AuthenticationFlowException("Device code verification failed", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
-        MinecraftProfile profile;
+        FullProfile profile;
         try {
-            profile = AuthenticationsFlows.JAVA_MINECRAFT_PROFILE.execute(session, application, msaAccessToken);
+            profile = AuthenticationFlows.FULL_PROFILE.execute(session, application, msaAccessToken);
         } catch (Exception e) {
-            throw new AuthenticationFlowException("Xbox/Minecraft token authentication failed", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
+            throw new AuthenticationFlowException("Xbox/Minecraft token authentication failed", e, AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
-        if (session.users().getUserByUsername(context.getRealm(), profile.username()) != null) {
-            context.failure(AuthenticationFlowError.USER_CONFLICT);
+        MinecraftProfile minecraftProfile = profile.minecraftProfile();
+        XboxProfile xboxProfile = profile.xboxProfile();
+
+        if (session.users().getUserByUsername(context.getRealm(), minecraftProfile.username()) != null) {
+            Response challenge = context.form()
+                    .setError(Messages.USERNAME_EXISTS)
+                    .createErrorPage(Response.Status.CONFLICT);
+            context.challenge(challenge);
             return;
         }
 
-        UserModel user = session.users().addUser(context.getRealm(), profile.username());
+        if (session.users().getUserByEmail(context.getRealm(), xboxProfile.email()) != null) {
+            Response challenge = context.form()
+                    .setError(Messages.EMAIL_EXISTS)
+                    .createErrorPage(Response.Status.CONFLICT);
+            context.challenge(challenge);
+            return;
+        }
+
+        //Minecraft profile
+        UserModel user = session.users().addUser(context.getRealm(), minecraftProfile.id(),
+                minecraftProfile.username(), true, true);
         user.setEnabled(true);
         user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+
+        //Xbox profile
+        user.setEmail(xboxProfile.email());
+        user.setFirstName(xboxProfile.firstname());
+        user.setLastName(xboxProfile.lastname());
 
         context.setUser(user);
         context.success();

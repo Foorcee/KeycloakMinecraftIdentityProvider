@@ -1,4 +1,4 @@
-package de.foorcee.keycloak.minecraft.authentication.forms;
+package de.foorcee.keycloak.minecraft.authentication;
 
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;

@@ -6,7 +6,7 @@ import de.foorcee.keycloak.minecraft.auth.result.MsaAccessToken;
 import de.foorcee.keycloak.minecraft.auth.result.MsaDeviceCode;
 import de.foorcee.keycloak.minecraft.auth.result.XblToken;
 import de.foorcee.keycloak.minecraft.auth.result.XboxLiveXstsToken;
-import de.foorcee.keycloak.minecraft.auth.result.XboxProfileInfo;
+import de.foorcee.keycloak.minecraft.auth.result.XboxProfile;
 import de.foorcee.keycloak.minecraft.auth.result.XboxTokenPair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -115,7 +115,7 @@ public class XboxInfoAuthenticationSteps extends AbstractKeycloakTest {
     public void testXboxLiveProfile() {
         var step = new XboxLiveFamilyInfoAuthenticationStep();
         var xboxToken = new XboxTokenPair<>(xblToken, xstsToken);
-        XboxProfileInfo profile = Assertions.assertDoesNotThrow(() -> step.execute(session, MINECRAFT_LAUNCHER, xboxToken));
+        XboxProfile profile = Assertions.assertDoesNotThrow(() -> step.execute(session, MINECRAFT_LAUNCHER, xboxToken));
 
         assertThat(profile).isNotNull();
 

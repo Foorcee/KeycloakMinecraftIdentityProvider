@@ -1,4 +1,4 @@
-package de.foorcee.keycloak.minecraft;
+package de.foorcee.keycloak.minecraft.social;
 
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;

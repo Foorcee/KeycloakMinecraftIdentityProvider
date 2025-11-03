@@ -3,7 +3,7 @@ package de.foorcee.keycloak.minecraft.auth.steps;
 import com.fasterxml.jackson.databind.JsonNode;
 import de.foorcee.keycloak.minecraft.auth.AuthApplication;
 import de.foorcee.keycloak.minecraft.auth.AuthenticationFlowStep;
-import de.foorcee.keycloak.minecraft.auth.result.XboxProfileInfo;
+import de.foorcee.keycloak.minecraft.auth.result.XboxProfile;
 import de.foorcee.keycloak.minecraft.auth.result.XboxLiveXstsToken;
 import de.foorcee.keycloak.minecraft.auth.result.XboxTokenPair;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -13,13 +13,13 @@ import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
 
-public class XboxLiveFamilyInfoAuthenticationStep implements AuthenticationFlowStep<XboxTokenPair<XboxLiveXstsToken>, XboxProfileInfo> {
+public class XboxLiveFamilyInfoAuthenticationStep implements AuthenticationFlowStep<XboxTokenPair<XboxLiveXstsToken>, XboxProfile> {
 
-    private static String XBOX_ACCOUNT_URL = "https://accounts.xboxlive.com/family/memberXuid(%d)";
-    private static String XBL_AUTH_HEADER = "XBL3.0 x=%s;%s";
+    private static final String XBOX_ACCOUNT_URL = "https://accounts.xboxlive.com/family/memberXuid(%d)";
+    private static final String XBL_AUTH_HEADER = "XBL3.0 x=%s;%s";
 
     @Override
-    public XboxProfileInfo execute(KeycloakSession session, AuthApplication application, XboxTokenPair<XboxLiveXstsToken> token) throws Exception {
+    public XboxProfile execute(KeycloakSession session, AuthApplication application, XboxTokenPair<XboxLiveXstsToken> token) throws Exception {
         String target = String.format(XBOX_ACCOUNT_URL, token.xstsToken().xid());
         String authHeader = String.format(XBL_AUTH_HEADER, token.xblToken().userHash(), token.xstsToken().token());
         try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(target)
@@ -51,7 +51,7 @@ public class XboxLiveFamilyInfoAuthenticationStep implements AuthenticationFlowS
 
             String email = member.get("email").asText();
 
-            return new XboxProfileInfo(email, firstName, lastName);
+            return new XboxProfile(email, firstName, lastName);
         } catch (IOException e) {
             throw new IdentityBrokerException("Could not obtain user profile from xbox auth", e);
         }
